@@ -153,7 +153,6 @@
             starMesh: null, starHaloMesh: null,
             letterContent: "", 
             letterTyper: null, letterStartTimer: null, letterLastTriggerTime: 0,
-            musicData: null,
         };
 
         let scene, camera, renderer, composer, clock = new THREE.Clock();
@@ -186,7 +185,10 @@
             
             switchTheme(0);
 
-            // 自动加载同目录下的tree.json文件
+            // 加载默认音频文件
+            await loadDefaultMusic();
+
+            // 自动加载同目录下的tree.json文件（如果有）
             await autoLoadTreeJson();
 
             // 初始化手势识别
@@ -216,6 +218,63 @@
             animate(); 
         }
 
+        // 加载默认音乐文件
+        async function loadDefaultMusic() {
+            const audioEl = document.getElementById('bg-music');
+            const musicUrl = 'John Williams - Jingle Bells.mp3';
+            
+            try {
+                console.log('尝试加载音乐文件:', musicUrl);
+                audioEl.src = musicUrl;
+                
+                // 添加事件监听器
+                audioEl.oncanplaythrough = () => {
+                    console.log('音乐可以播放，尝试自动播放...');
+                    
+                    // 尝试自动播放
+                    audioEl.play().then(() => {
+                        console.log('音乐自动播放成功');
+                        document.getElementById('loader-text').textContent = '音乐加载成功';
+                    }).catch(e => {
+                        console.warn('自动播放被阻止，需要用户交互:', e);
+                        document.getElementById('loader-text').textContent = '点击页面播放音乐';
+                        
+                        // 设置用户交互后播放
+                        const playOnClick = () => {
+                            audioEl.play().then(() => {
+                                console.log('通过用户交互播放音乐');
+                                document.getElementById('loader-text').textContent = '音乐播放中';
+                            }).catch(err => {
+                                console.warn('用户交互后播放音乐失败:', err);
+                            });
+                            // 移除事件监听器，只执行一次
+                            document.removeEventListener('click', playOnClick);
+                            document.removeEventListener('touchstart', playOnClick);
+                        };
+                        
+                        document.addEventListener('click', playOnClick);
+                        document.addEventListener('touchstart', playOnClick);
+                    });
+                };
+                
+                audioEl.onerror = (e) => {
+                    console.error('音乐加载错误:', e);
+                    console.error('错误详情:', audioEl.error);
+                    document.getElementById('loader-text').textContent = '音乐加载失败，请检查文件是否存在';
+                };
+                
+                audioEl.onload = () => {
+                    console.log('音乐加载完成');
+                };
+                
+                // 显式加载音频
+                audioEl.load();
+                
+            } catch (e) {
+                console.error('设置音乐时出错:', e);
+            }
+        }
+
         // 新增函数：自动加载tree.json文件
         async function autoLoadTreeJson() {
             try {
@@ -242,11 +301,10 @@
                 await applySceneData(data);
                 
                 console.log('tree.json加载成功');
-                document.getElementById('loader-text').textContent = '加载完成';
+                document.getElementById('loader-text').textContent = '配置加载完成';
                 
             } catch (error) {
-                console.warn('自动加载tree.json失败:', error.message);
-                document.getElementById('loader-text').textContent = '使用默认设置';
+                console.log('自动加载tree.json失败:', error.message);
                 // 如果tree.json不存在或格式错误，使用默认设置
                 document.getElementById('main-title').innerText = "圣诞快乐";
             }
@@ -272,57 +330,6 @@
             // 设置书信内容
             if (data.letter && typeof data.letter === 'string') {
                 STATE.letterContent = data.letter;
-            }
-
-            // 设置音乐 - 修复这里
-            if (data.music && typeof data.music === 'string') {
-                try {
-                    STATE.musicData = data.music;
-                    const audioEl = document.getElementById('bg-music');
-                    
-                    // 检查音乐URL格式
-                    if (data.music.startsWith('data:audio/') || 
-                        data.music.startsWith('http://') || 
-                        data.music.startsWith('https://') ||
-                        data.music.startsWith('./') ||
-                        data.music.startsWith('../')) {
-                        
-                        console.log('加载音乐:', data.music.substring(0, 100) + '...');
-                        audioEl.src = data.music;
-                        
-                        // 添加加载事件监听器
-                        audioEl.oncanplaythrough = () => {
-                            console.log('音乐可以播放');
-                            audioEl.play().then(() => {
-                                console.log('音乐播放成功');
-                            }).catch(e => {
-                                console.warn('自动播放被阻止，需要用户交互:', e);
-                                // 设置一个标志，当用户交互时再播放
-                                document.addEventListener('click', function playMusicOnClick() {
-                                    audioEl.play().then(() => {
-                                        console.log('通过用户交互播放音乐');
-                                    }).catch(err => {
-                                        console.warn('用户交互后播放音乐失败:', err);
-                                    });
-                                    document.removeEventListener('click', playMusicOnClick);
-                                }, { once: true });
-                            });
-                        };
-                        
-                        audioEl.onerror = (e) => {
-                            console.error('音乐加载错误:', e);
-                            console.error('音乐URL:', data.music.substring(0, 200));
-                        };
-                        
-                        audioEl.load(); // 显式加载
-                    } else {
-                        console.warn('音乐URL格式不支持:', data.music.substring(0, 100));
-                    }
-                } catch (e) {
-                    console.warn('音乐设置失败:', e);
-                }
-            } else {
-                console.log('没有音乐数据或音乐数据不是字符串');
             }
 
             // 设置照片
@@ -682,12 +689,44 @@
         function createStarTopper() {
             const star = new THREE.Mesh(new THREE.OctahedronGeometry(1.5, 0), matLib.starGold);
             star.position.set(0, CONFIG.particles.treeHeight/2 + 1.2, 0);
-            const halo = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), new THREE.MeshBasicMaterial({ 
-                map: new THREE.TextureLoader().load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/sprites/glow.png'), 
-                blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.5, color: 0xffaa00 
-            }));
-            star.add(halo); starGroup.add(star);
-            STATE.starMesh = star; STATE.starHaloMesh = halo; 
+            
+            // 修复：创建自定义光晕纹理替代404的图片
+            const haloCanvas = document.createElement('canvas');
+            haloCanvas.width = 256;
+            haloCanvas.height = 256;
+            const haloCtx = haloCanvas.getContext('2d');
+            
+            // 创建径向渐变作为光晕
+            const gradient = haloCtx.createRadialGradient(
+                128, 128, 0,
+                128, 128, 128
+            );
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            gradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)');
+            gradient.addColorStop(0.6, 'rgba(255, 255, 255, 0.3)');
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            
+            haloCtx.fillStyle = gradient;
+            haloCtx.fillRect(0, 0, 256, 256);
+            
+            const haloTexture = new THREE.CanvasTexture(haloCanvas);
+            
+            const halo = new THREE.Mesh(
+                new THREE.PlaneGeometry(8, 8), 
+                new THREE.MeshBasicMaterial({ 
+                    map: haloTexture, 
+                    blending: THREE.AdditiveBlending, 
+                    depthWrite: false, 
+                    transparent: true, 
+                    opacity: 0.5, 
+                    color: 0xffaa00 
+                })
+            );
+            
+            star.add(halo); 
+            starGroup.add(star);
+            STATE.starMesh = star; 
+            STATE.starHaloMesh = halo; 
         }
 
         function switchTheme(themeIndex) {
