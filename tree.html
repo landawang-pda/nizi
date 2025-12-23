@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Luxury Tree - Custom Edition</title>
+    <title>圣诞树</title>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=Ma+Shan+Zheng&display=swap');
@@ -11,7 +11,7 @@
         body { margin: 0; overflow: hidden; background-color: #020205; font-family: 'Cinzel', serif; touch-action: none; user-select: none; -webkit-user-select: none; }
         #canvas-container { width: 100vw; height: 100vh; position: absolute; z-index: 1; }
         
-        #ui-layer { position: absolute; width: 100%; height: 100%; z-index: 10; pointer-events: none; background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.3) 100%); }
+        #ui-layer { position: absolute; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
         
         #main-title {
             position: absolute;
@@ -30,14 +30,10 @@
             opacity: 0;
             min-height: 1.2em;
             
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-image: linear-gradient(180deg, #fffdf0 0%, #eacda3 30%, #d6ae7b 60%, #8b6c42 100%);
-            filter: drop-shadow(0 0 15px rgba(212, 175, 55, 0.6));
+            color: #d4af37;
+            text-shadow: 0 0 15px rgba(212, 175, 55, 0.6);
             
             animation: titleFadeIn 2s ease-out forwards 1s;
-            transition: filter 1.5s ease, background-image 1.5s ease;
         }
 
         @keyframes titleFadeIn {
@@ -45,28 +41,24 @@
             to { opacity: 1; transform: translate(-50%, 0); }
         }
 
-        #loader { position: absolute; width: 100%; height: 100%; background: #000; z-index: 100; display: flex; align-items: center; justify-content: center; transition: opacity 1.2s; pointer-events: none; }
-        .spinner { width: 40px; height: 40px; border: 2px solid rgba(212, 175, 55, 0.1); border-top: 2px solid #d4af37; border-radius: 50%; animation: spin 1s linear infinite; }
+        #loader { 
+            position: absolute; 
+            width: 100%; 
+            height: 100%; 
+            background: #000; 
+            z-index: 100; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            flex-direction: column;
+            transition: opacity 1.2s; 
+            pointer-events: none; 
+            color: #d4af37;
+            font-family: 'Cinzel', serif;
+        }
+        .spinner { width: 40px; height: 40px; border: 2px solid rgba(212, 175, 55, 0.1); border-top: 2px solid #d4af37; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
-
-        #top-right-controls { position: absolute; top: 20px; right: 20px; z-index: 30; display: flex; flex-direction: row; gap: 15px; pointer-events: auto; }
-        .control-col { display: flex; flex-direction: column; gap: 15px; }
-        
-        .control-btn { background: rgba(10, 10, 10, 0.6); border: 1px solid rgba(212, 175, 55, 0.4); color: #d4af37; width: 100px; padding: 5px 0; border-radius: 7px; font-family: 'Cinzel', serif; font-size: 14px; font-weight: 600; cursor: pointer; backdrop-filter: blur(5px); transition: all 0.3s ease; }
-        .control-btn:hover { background: rgba(212, 175, 55, 0.2); border-color: rgba(212, 175, 55, 0.8); color: #fff; transform: scale(1.05); }
-        .control-btn:active { transform: scale(0.95); }
-        .control-btn.disabled { color: #666; border-color: #444; }
-        
-        #file-input, #music-input, #import-input { display: none; }
-
-        #webcam-wrapper { position: absolute; bottom: 20px; right: 20px; opacity: 0; pointer-events: none; border: 1px solid rgba(212, 175, 55, 0.5); border-radius: 4px; background: #000; z-index: 50; display: flex; transition: opacity 0.5s; }
-        #webcam { display: none; }
-        #webcam-preview { width: 100%; height: 100%; transform: scaleX(-1); }
-
-        #letter-editor-modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 500px; background: rgba(10, 10, 10, 0.95); border: 1px solid #d4af37; border-radius: 10px; padding: 20px; z-index: 200; display: none; flex-direction: column; gap: 15px; pointer-events: auto; }
-        #letter-editor-modal h3 { color: #d4af37; margin: 0; text-align: center; }
-        #letter-text-input { width: 100%; height: 150px; background: rgba(255,255,255,0.05); border: 1px solid #444; color: #fff; padding: 10px; resize: none; outline: none; }
-        .modal-btn-group { display: flex; justify-content: flex-end; gap: 10px; }
+        #loader-text { font-size: 14px; text-align: center; max-width: 80%; margin-top: 10px; }
 
         #letter-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 150; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; pointer-events: auto; opacity: 0; transition: opacity 1.5s ease; }
         .letter-paper { height: 80%; aspect-ratio: 3/4; background: rgba(255, 252, 240, 0.15); backdrop-filter: blur(3px); border: 1px solid rgba(255, 255, 255, 0.3); padding: 6vh; box-sizing: border-box; position: relative; display: flex; flex-direction: column; transform: translateY(20px); transition: transform 1.5s ease-out; }
@@ -79,6 +71,10 @@
 
         .letter-close-btn { position: absolute; top: 15px; right: 15px; width: 30px; height: 30px; border: 1px solid rgba(255,255,255,0.4); border-radius: 50%; color: rgba(255,255,255,0.7); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; }
         .letter-close-btn:hover { background: rgba(255,255,255,0.2); color: #fff; border-color: #fff; }
+
+        #webcam-wrapper { position: absolute; bottom: 20px; right: 20px; opacity: 0; pointer-events: none; border: 1px solid rgba(212, 175, 55, 0.5); border-radius: 4px; background: #000; z-index: 50; display: flex; transition: opacity 0.5s; }
+        #webcam { display: none; }
+        #webcam-preview { width: 100%; height: 100%; transform: scaleX(-1); }
     </style>
 
     <script type="importmap">
@@ -93,38 +89,14 @@
 </head>
 
 <body>
-    <div id="loader"><div class="spinner"></div></div>
+    <div id="loader">
+        <div class="spinner"></div>
+        <div id="loader-text">加载中...</div>
+    </div>
     <div id="canvas-container"></div>
 
     <div id="ui-layer">
-        <div id="main-title"></div>
-
-        <div id="top-right-controls" style="display: none;">
-            <div class="control-col" id="col-media">
-                <button id="btn-bg-music" class="control-btn">上传音乐</button>
-                <button id="btn-add-photo" class="control-btn">上传照片</button>
-                <button id="btn-write-letter" class="control-btn">上传书信</button>
-                <button id="btn-set-title" class="control-btn">设置标题</button>
-            </div>
-            <div class="control-col" id="col-system">
-                <button id="btn-import" class="control-btn">导入网页</button>
-                <button id="btn-export" class="control-btn">导出网页</button>
-                <button id="btn-fullscreen" class="control-btn">全屏显示</button>
-                <button id="btn-switch-theme" class="control-btn">颜色切换</button>
-            </div>
-        </div>
-        <input type="file" id="file-input" multiple accept="image/*">
-        <input type="file" id="music-input" accept="audio/mp3,audio/*">
-        <input type="file" id="import-input" accept=".json">
-    </div>
-
-    <div id="letter-editor-modal">
-        <h3>撰写你的心意</h3>
-        <textarea id="letter-text-input" placeholder="在这里写下你想说的话..."></textarea>
-        <div class="modal-btn-group">
-            <button id="btn-cancel-letter" class="control-btn" style="width: 80px;">取消</button>
-            <button id="btn-save-letter" class="control-btn" style="width: 80px;">保存</button>
-        </div>
+        <div id="main-title">圣诞快乐</div>
     </div>
 
     <div id="letter-overlay">
@@ -179,7 +151,6 @@
             rotation: { x: 0, y: 0 }, spinVel: { x: 0, y: 0 }, time: 0,
             wasPointing: false, palmCenter: { x: 0.5, y: 0.5 }, hasPalmCenter: false,
             starMesh: null, starHaloMesh: null,
-            // 修改1：清空书信默认内容
             letterContent: "", 
             letterTyper: null, letterStartTimer: null, letterLastTriggerTime: 0,
             musicData: null,
@@ -211,7 +182,6 @@
             
             createParticles();      
             setupPostProcessing();
-            setupEvents();          
             setupLetterSystem(); 
             
             switchTheme(0);
@@ -219,11 +189,29 @@
             // 自动加载同目录下的tree.json文件
             await autoLoadTreeJson();
 
-            initMediaPipe().catch(console.warn);
+            // 初始化手势识别
+            try {
+                await initMediaPipe();
+            } catch (e) {
+                console.warn('手势识别初始化失败:', e);
+                document.getElementById('loader-text').textContent = '手势识别不可用，但页面已加载完成';
+            }
 
-            const loader = document.getElementById('loader');
-            loader.style.opacity = 0;
-            setTimeout(() => loader.remove(), 1200);
+            // 隐藏加载界面
+            setTimeout(() => {
+                const loader = document.getElementById('loader');
+                loader.style.opacity = 0;
+                setTimeout(() => loader.remove(), 1200);
+            }, 500);
+
+            // 自动进入全屏
+            setTimeout(() => {
+                try {
+                    document.documentElement.requestFullscreen();
+                } catch (e) {
+                    console.log('全屏请求被阻止:', e);
+                }
+            }, 1000);
 
             animate(); 
         }
@@ -231,17 +219,100 @@
         // 新增函数：自动加载tree.json文件
         async function autoLoadTreeJson() {
             try {
+                document.getElementById('loader-text').textContent = '加载配置中...';
                 const response = await fetch('tree.json');
+                
                 if (!response.ok) {
-                    throw new Error('tree.json文件未找到');
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
-                const jsonData = await response.text();
-                importSceneData(jsonData);
+                
+                const jsonText = await response.text();
+                document.getElementById('loader-text').textContent = '解析配置...';
+                
+                // 尝试解析JSON
+                let data;
+                try {
+                    data = JSON.parse(jsonText);
+                } catch (parseError) {
+                    console.error('JSON解析错误:', parseError);
+                    throw new Error('配置文件格式不正确');
+                }
+                
+                document.getElementById('loader-text').textContent = '应用设置...';
+                applySceneData(data);
+                
                 console.log('tree.json加载成功');
+                document.getElementById('loader-text').textContent = '加载完成';
+                
             } catch (error) {
                 console.warn('自动加载tree.json失败:', error.message);
-                // 如果tree.json不存在，可以设置一些默认值
+                document.getElementById('loader-text').textContent = '使用默认设置';
+                // 如果tree.json不存在或格式错误，使用默认设置
                 document.getElementById('main-title').innerText = "圣诞快乐";
+            }
+        }
+
+        // 应用场景数据的函数
+        function applySceneData(data) {
+            // 设置标题
+            if (data.title && typeof data.title === 'string') {
+                document.getElementById('main-title').innerText = data.title;
+            }
+            
+            // 设置主题
+            if (data.theme !== undefined && [0, 1, 2].includes(data.theme)) {
+                switchTheme(data.theme);
+            }
+            
+            // 设置手势切换
+            if (data.isGestureSwitchEnabled !== undefined) {
+                STATE.isGestureSwitchEnabled = !!data.isGestureSwitchEnabled;
+            }
+
+            // 设置书信内容
+            if (data.letter && typeof data.letter === 'string') {
+                STATE.letterContent = data.letter;
+            }
+
+            // 设置音乐
+            if (data.music && typeof data.music === 'string') {
+                try {
+                    STATE.musicData = data.music;
+                    const audioEl = document.getElementById('bg-music');
+                    audioEl.src = data.music;
+                    audioEl.currentTime = 0;
+                    audioEl.play().catch(e => console.warn('音乐播放失败:', e));
+                } catch (e) {
+                    console.warn('音乐设置失败:', e);
+                }
+            }
+
+            // 设置照片
+            if (data.photos && Array.isArray(data.photos)) {
+                clearPhotos();
+                const loader = new THREE.TextureLoader();
+                let loadedCount = 0;
+                
+                data.photos.forEach((src, index) => {
+                    if (typeof src === 'string') {
+                        document.getElementById('loader-text').textContent = `加载照片 ${index + 1}/${data.photos.length}`;
+                        loader.load(src, 
+                            t => { 
+                                t.colorSpace = THREE.SRGBColorSpace; 
+                                addPhotoToScene(t); 
+                                loadedCount++;
+                                if (loadedCount === data.photos.length) {
+                                    document.getElementById('loader-text').textContent = '照片加载完成';
+                                }
+                            },
+                            undefined,
+                            err => {
+                                console.warn('照片加载失败:', src, err);
+                                loadedCount++;
+                            }
+                        );
+                    }
+                });
             }
         }
 
@@ -674,15 +745,6 @@
             photoMeshGroup.add(group); particleSystem.push(new Particle(group, 'PHOTO', false));
         }
 
-        function handleImageUpload(e) {
-            if(!e.target.files.length) return;
-            Array.from(e.target.files).forEach(f => {
-                const reader = new FileReader();
-                reader.onload = (ev) => new THREE.TextureLoader().load(ev.target.result, t => { t.colorSpace = THREE.SRGBColorSpace; addPhotoToScene(t); });
-                reader.readAsDataURL(f);
-            });
-        }
-
         function clearPhotos() {
             const photosToRemove = particleSystem.filter(p => p.type === 'PHOTO');
             photosToRemove.forEach(p => {
@@ -700,91 +762,7 @@
             particleSystem = particleSystem.filter(p => p.type !== 'PHOTO');
         }
 
-        function exportSceneData() {
-            const photos = particleSystem.filter(p => p.type === 'PHOTO').map(p => {
-                try {
-                    return p.mesh.children[1].material.map.image.src; 
-                } catch(e) { return null; }
-            }).filter(src => src !== null);
-
-            const exportData = {
-                music: STATE.musicData, 
-                letter: STATE.letterContent,
-                photos: photos,
-                theme: STATE.currentThemeIndex,
-                title: document.getElementById('main-title').innerText, 
-                isGestureSwitchEnabled: STATE.isGestureSwitchEnabled 
-            };
-
-            const blob = new Blob([JSON.stringify(exportData)], {type: "application/json"});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = "tree.json";
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        function importSceneData(jsonData) {
-            try {
-                const data = JSON.parse(jsonData);
-                
-                if (data.title) {
-                    document.getElementById('main-title').innerText = data.title;
-                }
-                
-                if (data.isGestureSwitchEnabled !== undefined) {
-                    STATE.isGestureSwitchEnabled = data.isGestureSwitchEnabled;
-                    const btn = document.getElementById('btn-switch-theme');
-                    if (STATE.isGestureSwitchEnabled) btn.classList.remove('disabled');
-                    else btn.classList.add('disabled');
-                }
-
-                if (data.letter) STATE.letterContent = data.letter;
-
-                if (data.music) {
-                    STATE.musicData = data.music;
-                    const audioEl = document.getElementById('bg-music');
-                    audioEl.src = data.music;
-                    audioEl.currentTime = 0;
-                    audioEl.play().catch(console.warn);
-                }
-
-                clearPhotos();
-                if (data.photos && Array.isArray(data.photos)) {
-                    const loader = new THREE.TextureLoader();
-                    data.photos.forEach(src => {
-                        loader.load(src, t => { 
-                            t.colorSpace = THREE.SRGBColorSpace; 
-                            addPhotoToScene(t); 
-                        });
-                    });
-                }
-
-                if (data.theme !== undefined) {
-                    switchTheme(data.theme);
-                }
-                
-                document.documentElement.requestFullscreen().catch(err => {
-                    console.log("Auto fullscreen blocked by browser policy:", err);
-                });
-
-            } catch (e) {
-                console.error("Import failed:", e);
-                alert("文件格式错误，无法导入");
-            }
-        }
-
         function setupLetterSystem() {
-            const modal = document.getElementById('letter-editor-modal'), txt = document.getElementById('letter-text-input');
-            document.getElementById('btn-write-letter').onclick = (e) => { e.stopPropagation(); modal.style.display = 'flex'; txt.value = STATE.letterContent; };
-            document.getElementById('btn-cancel-letter').onclick = (e) => { e.stopPropagation(); modal.style.display = 'none'; };
-            // 修改2：保存书信逻辑，允许用户清空内容，并保存为空字符串
-            document.getElementById('btn-save-letter').onclick = (e) => { 
-                e.stopPropagation(); 
-                STATE.letterContent = txt.value.trim(); 
-                modal.style.display = 'none'; 
-            };
             document.getElementById('btn-close-letter-mode').onclick = (e) => { e.stopPropagation(); exitLetterMode(); };
         }
 
@@ -856,10 +834,8 @@
             const dIndex = dist(8,0), dMiddle = dist(12,0), dRing = dist(16,0), dPinky = dist(20,0);
             const palmSize = dist(0, 9); 
 
-            // 修改3：OK手势触发书信逻辑
-            // 判断是否是 OK 手势 (拇指捏合食指，且中指伸直)
+            // OK手势触发书信逻辑
             if (dist(4,8) < 0.05 && dMiddle > 0.15 && dMiddle > dIndex * 1.2) {
-                // 新增判断：只有当 letterContent 不为空时才触发
                 if (STATE.letterContent && STATE.letterContent.trim() !== "") {
                     if (Date.now() - STATE.letterLastTriggerTime > 1000) { 
                         STATE.letterLastTriggerTime = Date.now(); 
@@ -974,85 +950,19 @@
         }
 
         function setupEvents() {
-            window.addEventListener('resize', () => { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); composer.setSize(window.innerWidth, window.innerHeight); });
+            window.addEventListener('resize', () => { 
+                camera.aspect = window.innerWidth/window.innerHeight; 
+                camera.updateProjectionMatrix(); 
+                renderer.setSize(window.innerWidth, window.innerHeight); 
+                composer.setSize(window.innerWidth, window.innerHeight); 
+            });
             
-            const fileInput = document.getElementById('file-input');
-            document.getElementById('btn-add-photo').onclick = (e) => { e.stopPropagation(); fileInput.click(); };
-            fileInput.onchange = handleImageUpload;
-
-            const musicInput = document.getElementById('music-input'), audioEl = document.getElementById('bg-music');
-            document.getElementById('btn-bg-music').onclick = (e) => { e.stopPropagation(); musicInput.click(); };
-            
-            musicInput.onchange = (e) => { 
-                if(e.target.files[0]) {
-                    const reader = new FileReader();
-                    reader.onload = function(evt) {
-                        STATE.musicData = evt.target.result; 
-                        audioEl.src = evt.target.result; 
-                        audioEl.currentTime = 0; 
-                        audioEl.play().catch(console.warn); 
-                    };
-                    reader.readAsDataURL(e.target.files[0]);
-                } 
-            };
-
-            document.getElementById('btn-set-title').onclick = (e) => {
-                e.stopPropagation();
-                const currentTitle = document.getElementById('main-title').innerText;
-                const newTitle = prompt("请输入页面标题:", currentTitle);
-                if (newTitle !== null) {
-                    document.getElementById('main-title').innerText = newTitle;
-                }
-            };
-
-            const fsBtn = document.getElementById('btn-fullscreen');
-            fsBtn.onclick = (e) => { e.stopPropagation(); document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); };
-            
-            document.addEventListener('fullscreenchange', () => { 
-                const isFs = !!document.fullscreenElement;
-                fsBtn.textContent = isFs ? '取消全屏' : '全屏显示'; 
-                
-                const colMedia = document.getElementById('col-media');
-                const btnImport = document.getElementById('btn-import');
-                const btnExport = document.getElementById('btn-export');
-                const btnSwitch = document.getElementById('btn-switch-theme');
-
-                if (isFs) {
-                    colMedia.style.display = 'none'; 
-                    btnImport.style.display = 'none'; 
-                    btnExport.style.display = 'none'; 
-                    btnSwitch.style.display = 'none';
-                } else {
-                    colMedia.style.display = 'flex';
-                    btnImport.style.display = 'block';
-                    btnExport.style.display = 'block';
-                    btnSwitch.style.display = 'block';
+            // 添加键盘退出全屏功能
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && document.fullscreenElement) {
+                    document.exitFullscreen();
                 }
             });
-
-            document.getElementById('btn-export').onclick = (e) => { e.stopPropagation(); exportSceneData(); };
-            
-            const importInput = document.getElementById('import-input');
-            document.getElementById('btn-import').onclick = (e) => { e.stopPropagation(); importInput.click(); };
-            importInput.onchange = (e) => {
-                if (e.target.files[0]) {
-                    const reader = new FileReader();
-                    reader.onload = (evt) => importSceneData(evt.target.result);
-                    reader.readAsText(e.target.files[0]);
-                }
-            };
-
-            const btnSwitch = document.getElementById('btn-switch-theme');
-            btnSwitch.onclick = (e) => {
-                e.stopPropagation();
-                STATE.isGestureSwitchEnabled = !STATE.isGestureSwitchEnabled;
-                btnSwitch.textContent = STATE.isGestureSwitchEnabled ? "颜色切换" : "颜色切换";
-                if (STATE.isGestureSwitchEnabled) {
-                    btnSwitch.classList.remove('disabled');
-                } else {
-                    btnSwitch.classList.add('disabled');
-                }
-            };
         }
 
         init();
