@@ -239,7 +239,7 @@
                 }
                 
                 document.getElementById('loader-text').textContent = '应用设置...';
-                applySceneData(data);
+                await applySceneData(data);
                 
                 console.log('tree.json加载成功');
                 document.getElementById('loader-text').textContent = '加载完成';
@@ -253,7 +253,7 @@
         }
 
         // 应用场景数据的函数
-        function applySceneData(data) {
+        async function applySceneData(data) {
             // 设置标题
             if (data.title && typeof data.title === 'string') {
                 document.getElementById('main-title').innerText = data.title;
@@ -274,17 +274,55 @@
                 STATE.letterContent = data.letter;
             }
 
-            // 设置音乐
+            // 设置音乐 - 修复这里
             if (data.music && typeof data.music === 'string') {
                 try {
                     STATE.musicData = data.music;
                     const audioEl = document.getElementById('bg-music');
-                    audioEl.src = data.music;
-                    audioEl.currentTime = 0;
-                    audioEl.play().catch(e => console.warn('音乐播放失败:', e));
+                    
+                    // 检查音乐URL格式
+                    if (data.music.startsWith('data:audio/') || 
+                        data.music.startsWith('http://') || 
+                        data.music.startsWith('https://') ||
+                        data.music.startsWith('./') ||
+                        data.music.startsWith('../')) {
+                        
+                        console.log('加载音乐:', data.music.substring(0, 100) + '...');
+                        audioEl.src = data.music;
+                        
+                        // 添加加载事件监听器
+                        audioEl.oncanplaythrough = () => {
+                            console.log('音乐可以播放');
+                            audioEl.play().then(() => {
+                                console.log('音乐播放成功');
+                            }).catch(e => {
+                                console.warn('自动播放被阻止，需要用户交互:', e);
+                                // 设置一个标志，当用户交互时再播放
+                                document.addEventListener('click', function playMusicOnClick() {
+                                    audioEl.play().then(() => {
+                                        console.log('通过用户交互播放音乐');
+                                    }).catch(err => {
+                                        console.warn('用户交互后播放音乐失败:', err);
+                                    });
+                                    document.removeEventListener('click', playMusicOnClick);
+                                }, { once: true });
+                            });
+                        };
+                        
+                        audioEl.onerror = (e) => {
+                            console.error('音乐加载错误:', e);
+                            console.error('音乐URL:', data.music.substring(0, 200));
+                        };
+                        
+                        audioEl.load(); // 显式加载
+                    } else {
+                        console.warn('音乐URL格式不支持:', data.music.substring(0, 100));
+                    }
                 } catch (e) {
                     console.warn('音乐设置失败:', e);
                 }
+            } else {
+                console.log('没有音乐数据或音乐数据不是字符串');
             }
 
             // 设置照片
@@ -292,27 +330,43 @@
                 clearPhotos();
                 const loader = new THREE.TextureLoader();
                 let loadedCount = 0;
+                const totalPhotos = data.photos.length;
                 
-                data.photos.forEach((src, index) => {
+                if (totalPhotos > 0) {
+                    document.getElementById('loader-text').textContent = `加载照片 0/${totalPhotos}`;
+                }
+                
+                for (let i = 0; i < totalPhotos; i++) {
+                    const src = data.photos[i];
                     if (typeof src === 'string') {
-                        document.getElementById('loader-text').textContent = `加载照片 ${index + 1}/${data.photos.length}`;
-                        loader.load(src, 
-                            t => { 
-                                t.colorSpace = THREE.SRGBColorSpace; 
-                                addPhotoToScene(t); 
-                                loadedCount++;
-                                if (loadedCount === data.photos.length) {
-                                    document.getElementById('loader-text').textContent = '照片加载完成';
-                                }
-                            },
-                            undefined,
-                            err => {
-                                console.warn('照片加载失败:', src, err);
-                                loadedCount++;
-                            }
-                        );
+                        try {
+                            await new Promise((resolve, reject) => {
+                                loader.load(src, 
+                                    t => { 
+                                        t.colorSpace = THREE.SRGBColorSpace; 
+                                        addPhotoToScene(t); 
+                                        loadedCount++;
+                                        document.getElementById('loader-text').textContent = `加载照片 ${loadedCount}/${totalPhotos}`;
+                                        resolve();
+                                    },
+                                    undefined,
+                                    err => {
+                                        console.warn(`照片 ${i} 加载失败:`, err);
+                                        loadedCount++;
+                                        document.getElementById('loader-text').textContent = `加载照片 ${loadedCount}/${totalPhotos}`;
+                                        resolve(); // 即使失败也继续
+                                    }
+                                );
+                            });
+                        } catch (e) {
+                            console.warn(`照片 ${i} 加载异常:`, e);
+                        }
                     }
-                });
+                }
+                
+                if (totalPhotos > 0) {
+                    document.getElementById('loader-text').textContent = `已加载 ${loadedCount}/${totalPhotos} 张照片`;
+                }
             }
         }
 
@@ -963,6 +1017,20 @@
                     document.exitFullscreen();
                 }
             });
+            
+            // 添加点击事件来触发音乐播放（解决浏览器自动播放限制）
+            document.addEventListener('click', function initMusicPlay() {
+                const audioEl = document.getElementById('bg-music');
+                if (audioEl.src && !audioEl.played) {
+                    audioEl.play().then(() => {
+                        console.log('通过用户点击播放音乐');
+                    }).catch(e => {
+                        console.warn('点击播放音乐失败:', e);
+                    });
+                }
+                // 移除监听器，只执行一次
+                document.removeEventListener('click', initMusicPlay);
+            }, { once: true });
         }
 
         init();
